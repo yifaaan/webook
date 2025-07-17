@@ -3,17 +3,27 @@ package web
 import (
 	"fmt"
 	"net/http"
-	"regexp"
+
+	regexp "github.com/dlclark/regexp2"
 
 	"github.com/gin-gonic/gin"
 )
 
-var (
-	emailRegexExp = regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`)
-)
-
 // 定义和用户有关的路由
 type UserHandler struct {
+	emailExp    *regexp.Regexp
+	passwordExp *regexp.Regexp
+}
+
+func NewUserHandler() *UserHandler {
+	const (
+		emailRegexExp    = `^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`
+		passwordRegexExp = `^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$`
+	)
+	emailExp := regexp.MustCompile(emailRegexExp, 0)
+	passwordExp := regexp.MustCompile(passwordRegexExp, 0)
+	return &UserHandler{emailExp: emailExp, passwordExp: passwordExp}
+
 }
 
 func (u *UserHandler) RegisterRoutes(server *gin.Engine) {
@@ -37,7 +47,12 @@ func (u *UserHandler) SignUp(ctx *gin.Context) {
 		return
 	}
 
-	if !emailRegexExp.MatchString(req.Email) {
+	isMatch, err := u.emailExp.MatchString(req.Email)
+	if err != nil {
+		ctx.String(http.StatusOK, "系统错误")
+		return
+	}
+	if !isMatch {
 		ctx.String(http.StatusOK, "邮箱格式错误")
 		return
 	}
@@ -46,11 +61,12 @@ func (u *UserHandler) SignUp(ctx *gin.Context) {
 		ctx.String(http.StatusOK, "两次输入的密码不一致")
 		return
 	}
-
-	hasLetter, _ := regexp.MatchString(`[A-Za-z]`, req.Password)
-	hasDigit, _ := regexp.MatchString(`\d`, req.Password)
-
-	if len(req.Password) < 8 || !hasLetter || !hasDigit {
+	isMatch, err = u.passwordExp.MatchString(req.Password)
+	if err != nil {
+		ctx.String(http.StatusOK, "系统错误")
+		return
+	}
+	if !isMatch {
 		ctx.String(http.StatusOK, "密码必须包含数字和字母，且长度不小于8位")
 		return
 	}

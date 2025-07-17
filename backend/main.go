@@ -16,7 +16,7 @@ func main() {
 		ExposeHeaders:    []string{"x-jwt-token", "x-refresh-token"},
 		AllowCredentials: true,
 	}))
-	u := &web.UserHandler{}
+	u := web.NewUserHandler()
 	u.RegisterRoutes(server)
 
 	// REST
