@@ -1,28 +1,30 @@
 package web
 
 import (
-	"fmt"
 	"net/http"
 
 	regexp "github.com/dlclark/regexp2"
+	"github.com/yifaaan/webook/internal/domain"
+	"github.com/yifaaan/webook/internal/service"
 
 	"github.com/gin-gonic/gin"
 )
 
 // 定义和用户有关的路由
 type UserHandler struct {
+	svc         *service.UserService
 	emailExp    *regexp.Regexp
 	passwordExp *regexp.Regexp
 }
 
-func NewUserHandler() *UserHandler {
+func NewUserHandler(svc *service.UserService) *UserHandler {
 	const (
 		emailRegexExp    = `^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`
 		passwordRegexExp = `^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$`
 	)
 	emailExp := regexp.MustCompile(emailRegexExp, 0)
 	passwordExp := regexp.MustCompile(passwordRegexExp, 0)
-	return &UserHandler{emailExp: emailExp, passwordExp: passwordExp}
+	return &UserHandler{svc: svc, emailExp: emailExp, passwordExp: passwordExp}
 
 }
 
@@ -71,10 +73,13 @@ func (u *UserHandler) SignUp(ctx *gin.Context) {
 		return
 	}
 
+	// 调用svc的方法
+	err = u.svc.SignUp(ctx, domain.User{Email: req.Email, Password: req.Password})
+	if err != nil {
+		ctx.String(http.StatusOK, "系统错误")
+		return
+	}
 	ctx.String(http.StatusOK, "注册成功")
-	fmt.Printf("%v", req)
-
-	// 数据库操作
 }
 
 func (u *UserHandler) Login(ctx *gin.Context) {

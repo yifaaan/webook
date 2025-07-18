@@ -6,12 +6,25 @@ import (
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"github.com/yifaaan/webook/internal/repository"
+	"github.com/yifaaan/webook/internal/repository/dao"
+	"github.com/yifaaan/webook/internal/service"
 	"github.com/yifaaan/webook/internal/web"
+	"gorm.io/driver/mysql"
+	"gorm.io/gorm"
 )
 
 func main() {
-	server := gin.Default()
+	db, err := gorm.Open(mysql.Open("root:123456@tcp(localhost:3306)/webook"))
+	if err != nil {
+		panic(err)
+	}
+	d := dao.NewUserDAO(db)
+	repo := repository.NewUserRepository(d)
+	svc := service.NewUserService(repo)
 
+	server := gin.Default()
+	// 跨域middleware
 	server.Use(cors.New(cors.Config{
 		// AllowOrigins: []string{"http://localhost:3000"},
 		AllowMethods:     []string{"GET", "POST", "PUT", "OPTIONS", "DELETE"},
@@ -22,7 +35,8 @@ func main() {
 		},
 		MaxAge: 12 * time.Hour,
 	}))
-	u := web.NewUserHandler()
+
+	u := web.NewUserHandler(svc)
 	u.RegisterRoutes(server)
 
 	// REST
