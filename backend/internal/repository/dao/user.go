@@ -2,9 +2,15 @@ package dao
 
 import (
 	"context"
+	"errors"
 	"time"
 
+	"github.com/go-sql-driver/mysql"
 	"gorm.io/gorm"
+)
+
+var (
+	ErrEmailDuplicate = errors.New("邮箱冲突")
 )
 
 // Data access object
@@ -20,7 +26,14 @@ func (dao *UserDAO) Insert(ctx context.Context, user User) error {
 	now := time.Now().UnixMilli()
 	user.CTime = now
 	user.UTime = now
-	return dao.db.WithContext(ctx).Create(&user).Error
+	err := dao.db.WithContext(ctx).Create(user).Error
+	if mysqlErr, ok := err.(*mysql.MySQLError); ok {
+		const uniqueConflictsErrNo uint16 = 1062
+		if mysqlErr.Number == uniqueConflictsErrNo {
+			return ErrEmailDuplicate
+		}
+	}
+	return err
 }
 
 // 对应db表user

@@ -7,6 +7,10 @@ import (
 	"github.com/yifaaan/webook/internal/repository/dao"
 )
 
+var (
+	ErrEmailDuplicate = dao.ErrEmailDuplicate
+)
+
 type UserRepository struct {
 	dao *dao.UserDAO
 }
