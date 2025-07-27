@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 
 	"github.com/yifaaan/webook/internal/domain"
 	"github.com/yifaaan/webook/internal/repository"
@@ -9,7 +10,8 @@ import (
 )
 
 var (
-	ErrEmailDuplicate = repository.ErrEmailDuplicate
+	ErrEmailDuplicate        = repository.ErrEmailDuplicate
+	ErrInvalidUserOrPassword = errors.New("邮箱或密码错误")
 )
 
 type UserService struct {
@@ -27,4 +29,20 @@ func (us *UserService) SignUp(ctx context.Context, user domain.User) error {
 	}
 	user.Password = string(hash)
 	return us.repo.Create(ctx, user)
+}
+
+func (us *UserService) Login(ctx context.Context, user domain.User) error {
+	u, err := us.repo.FindByEmail(ctx, user.Email)
+	if err == repository.ErrUserNotFound {
+		return ErrInvalidUserOrPassword
+	}
+	if err != nil {
+		return err
+	}
+	// 比较密码
+	err = bcrypt.CompareHashAndPassword([]byte(u.Password), []byte(user.Password))
+	if err != nil {
+		return ErrInvalidUserOrPassword
+	}
+	return nil
 }

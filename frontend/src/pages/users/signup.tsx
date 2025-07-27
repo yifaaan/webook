@@ -1,8 +1,11 @@
 import React from 'react';
-import { Button, Form, Input } from 'antd';
+import { Button, Form, Input, Card, Typography, Space } from 'antd';
+import { LockOutlined, MailOutlined, SafetyOutlined } from '@ant-design/icons';
 import axios from "@/axios/axios";
 import Link from "next/link";
 import router from "next/router";
+
+const { Title, Text } = Typography;
 
 const onFinish = (values: any) => {
     axios.post("/users/signup", values)
@@ -42,46 +45,98 @@ const onFinishFailed = (errorInfo: any) => {
 };
 
 const SignupForm: React.FC = () => (
-    <Form
-        name="basic"
-        labelCol={{ span: 8 }}
-        wrapperCol={{ span: 16 }}
-        style={{ maxWidth: 600 }}
-        initialValues={{ remember: true }}
-        onFinish={onFinish}
-        onFinishFailed={onFinishFailed}
-        autoComplete="off"
-    >
-        <Form.Item
-            label="邮箱"
-            name="email"
-            rules={[{ required: true, message: '请输入邮箱' }]}
+    <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100 flex items-center justify-center p-4">
+        <Card 
+            className="w-full max-w-md shadow-xl rounded-2xl"
+            style={{ background: 'rgba(255, 255, 255, 0.95)', backdropFilter: 'blur(10px)' }}
         >
-            <Input />
-        </Form.Item>
+            <div className="text-center mb-8">
+                <Title level={2} className="text-gray-800 mb-2">
+                    创建账号
+                </Title>
+                <Text type="secondary">加入我们，开始您的阅读之旅</Text>
+            </div>
 
-        <Form.Item
-            label="密码"
-            name="password"
-            rules={[{ required: true, message: '请输入密码' }]}
-        >
-            <Input.Password />
-        </Form.Item>
+            <Form
+                name="basic"
+                onFinish={onFinish}
+                onFinishFailed={onFinishFailed}
+                autoComplete="off"
+                layout="vertical"
+                size="large"
+            >
+                <Form.Item
+                    label="邮箱"
+                    name="email"
+                    rules={[
+                        { required: true, message: '请输入邮箱' },
+                        { type: 'email', message: '请输入有效的邮箱地址' }
+                    ]}
+                >
+                    <Input 
+                        prefix={<MailOutlined className="text-gray-400" />}
+                        placeholder="请输入您的邮箱"
+                        className="rounded-lg"
+                    />
+                </Form.Item>
 
-        <Form.Item
-            label="确认密码"
-            name="confirmPassword"
-            rules={[{ required: true, message: '请确认密码' }]}
-        >
-            <Input.Password />
-        </Form.Item>
-        <Form.Item wrapperCol={{ offset: 8, span: 16 }}>
-            <Button type="primary" htmlType="submit">
-                注册
-            </Button>
-            <Link href={"/users/login"}>&nbsp;登录</Link>
-        </Form.Item>
-    </Form>
+                <Form.Item
+                    label="密码"
+                    name="password"
+                    rules={[
+                        { required: true, message: '请输入密码' },
+                        { min: 6, message: '密码至少6位字符' }
+                    ]}
+                >
+                    <Input.Password 
+                        prefix={<LockOutlined className="text-gray-400" />}
+                        placeholder="请输入密码（至少6位）"
+                        className="rounded-lg"
+                    />
+                </Form.Item>
+
+                <Form.Item
+                    label="确认密码"
+                    name="confirmPassword"
+                    dependencies={['password']}
+                    rules={[
+                        { required: true, message: '请确认密码' },
+                        ({ getFieldValue }) => ({
+                            validator(_, value) {
+                                if (!value || getFieldValue('password') === value) {
+                                    return Promise.resolve();
+                                }
+                                return Promise.reject(new Error('两次输入的密码不一致'));
+                            },
+                        }),
+                    ]}
+                >
+                    <Input.Password 
+                        prefix={<SafetyOutlined className="text-gray-400" />}
+                        placeholder="请再次输入密码"
+                        className="rounded-lg"
+                    />
+                </Form.Item>
+
+                <Form.Item className="mb-6">
+                    <Button 
+                        type="primary" 
+                        htmlType="submit" 
+                        className="w-full h-12 rounded-lg bg-gradient-to-r from-green-500 to-emerald-600 border-0 hover:from-green-600 hover:to-emerald-700 shadow-lg"
+                    >
+                        注册
+                    </Button>
+                </Form.Item>
+
+                <div className="text-center">
+                    <Text type="secondary">已有账号？</Text>
+                    <Link href="/users/login" className="ml-2 text-green-500 hover:text-green-600 font-medium">
+                        立即登录
+                    </Link>
+                </div>
+            </Form>
+        </Card>
+    </div>
 );
 
 export default SignupForm;

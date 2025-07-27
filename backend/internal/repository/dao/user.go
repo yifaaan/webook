@@ -11,6 +11,7 @@ import (
 
 var (
 	ErrEmailDuplicate = errors.New("邮箱冲突")
+	ErrUserNotFound   = gorm.ErrRecordNotFound
 )
 
 // Data access object
@@ -26,7 +27,7 @@ func (dao *UserDAO) Insert(ctx context.Context, user User) error {
 	now := time.Now().UnixMilli()
 	user.CTime = now
 	user.UTime = now
-	err := dao.db.WithContext(ctx).Create(user).Error
+	err := dao.db.WithContext(ctx).Create(&user).Error
 	if mysqlErr, ok := err.(*mysql.MySQLError); ok {
 		const uniqueConflictsErrNo uint16 = 1062
 		if mysqlErr.Number == uniqueConflictsErrNo {
@@ -34,6 +35,12 @@ func (dao *UserDAO) Insert(ctx context.Context, user User) error {
 		}
 	}
 	return err
+}
+
+func (dao *UserDAO) FindByEmail(ctx context.Context, email string) (User, error) {
+	var user User
+	err := dao.db.WithContext(ctx).Where("email = ?", email).First(&user).Error
+	return user, err
 }
 
 // 对应db表user

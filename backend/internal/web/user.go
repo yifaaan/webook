@@ -75,6 +75,10 @@ func (u *UserHandler) SignUp(ctx *gin.Context) {
 
 	// 调用svc的方法
 	err = u.svc.SignUp(ctx, domain.User{Email: req.Email, Password: req.Password})
+	if err == service.ErrEmailDuplicate {
+		ctx.String(http.StatusOK, "邮箱冲突")
+		return
+	}
 	if err != nil {
 		ctx.String(http.StatusOK, "系统错误")
 		return
@@ -83,7 +87,23 @@ func (u *UserHandler) SignUp(ctx *gin.Context) {
 }
 
 func (u *UserHandler) Login(ctx *gin.Context) {
-
+	type LoginReq struct {
+		Email    string `json:"email"`
+		Password string `json:"password"`
+	}
+	var req LoginReq
+	if err := ctx.Bind(&req); err != nil {
+		return
+	}
+	err := u.svc.Login(ctx, domain.User{Email: req.Email, Password: req.Password})
+	if err == service.ErrInvalidUserOrPassword {
+		ctx.String(http.StatusOK, "用户名或密码错误")
+		return
+	}
+	if err != nil {
+		ctx.String(http.StatusOK, "系统错误")
+	}
+	ctx.String(http.StatusOK, "登录成功")
 }
 
 func (u *UserHandler) Edit(ctx *gin.Context) {
