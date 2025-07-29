@@ -5,11 +5,14 @@ import (
 	"time"
 
 	"github.com/gin-contrib/cors"
+	"github.com/gin-contrib/sessions"
+	"github.com/gin-contrib/sessions/redis"
 	"github.com/gin-gonic/gin"
 	"github.com/yifaaan/webook/internal/repository"
 	"github.com/yifaaan/webook/internal/repository/dao"
 	"github.com/yifaaan/webook/internal/service"
 	"github.com/yifaaan/webook/internal/web"
+	"github.com/yifaaan/webook/internal/web/middleware"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 )
@@ -55,5 +58,15 @@ func initWebServer() *gin.Engine {
 		},
 		MaxAge: 12 * time.Hour,
 	}))
+
+	// store := cookie.NewStore([]byte("secret"))
+	store, err := redis.NewStore(16, "tcp", "localhost:6379", "", "", []byte("adf"))
+	if err != nil {
+		panic(err)
+	}
+	server.Use(sessions.Sessions("ssid", store))
+
+	// 登录校验middleware
+	server.Use(middleware.NewLoginMiddlewareBuilder().IgnorePaths("/users/login", "/users/signup").Build())
 	return server
 }

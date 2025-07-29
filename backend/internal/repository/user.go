@@ -33,7 +33,7 @@ func (up *UserRepository) FindByEmail(ctx context.Context, email string) (domain
 		return domain.User{}, err
 	}
 
-	return domain.User{Email: user.Email, Password: user.Password}, nil
+	return domain.User{Id: user.Id, Email: user.Email, Password: user.Password}, nil
 }
 
 func (up *UserRepository) FindById(int64) {

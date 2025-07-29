@@ -144,3 +144,57 @@ body {
   font-weight: 500 !important;
   padding: 4px 12px !important;
 }
+
+/* 增强按钮美学 */
+.ant-btn {
+  font-weight: 500 !important;
+  letter-spacing: 0.025em !important;
+}
+
+.ant-btn-primary {
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8) !important;
+  border: none !important;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3) !important;
+}
+
+.ant-btn-primary:hover {
+  background: linear-gradient(135deg, #2563eb, #1e40af) !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4) !important;
+}
+
+/* 改善布局间距 */
+.ant-space-item {
+  margin-right: 8px !important;
+}
+
+/* 优化加载动画 */
+@keyframes shimmer {
+  0% { background-position: -200px 0; }
+  100% { background-position: calc(200px + 100%) 0; }
+}
+
+.loading-shimmer {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200px 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+/* 美化页面转场 */
+.page-transition {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 改善文本可读性 */
+p, .ant-typography {
+  line-height: 1.7 !important;
+}
+
+/* 增强交互反馈 */
+.interactive-element {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.interactive-element:hover {
+  transform: translateY(-2px);
+}

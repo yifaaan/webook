@@ -1,5 +1,5 @@
 import React from 'react';
-import { Button, Form, Input, Card, Typography, Space } from 'antd';
+import { Button, Form, Input, Card, Typography, Space, message } from 'antd';
 import { LockOutlined, MailOutlined, SafetyOutlined } from '@ant-design/icons';
 import axios from "@/axios/axios";
 import Link from "next/link";
@@ -7,41 +7,43 @@ import router from "next/router";
 
 const { Title, Text } = Typography;
 
-const onFinish = (values: any) => {
-    axios.post("/users/signup", values)
-        .then((res) => {
-            if(res.status != 200) {
-                alert(res.statusText);
-                return
-            }
-            if(typeof res.data == 'string') {
-                alert(res.data);
+const handleSignup = async (values: any) => {
+    try {
+        const response = await axios.post("/users/signup", values);
+        
+        if (response.status !== 200) {
+            message.error(response.statusText);
+            return;
+        }
+        
+        if (typeof response.data === 'string') {
+            message.error(response.data);
+        } else {
+            const { code, msg } = response.data;
+            const displayMessage = msg || JSON.stringify(response.data);
+            
+            if (code === 0) {
+                message.success('注册成功！即将跳转到登录页面');
+                setTimeout(() => router.push('/users/login'), 1500);
             } else {
-                const msg = res.data?.msg || JSON.stringify(res.data)
-                alert(msg);
-                if(res.data.code == 0) {
-                    router.push('/users/login')
-                }
+                message.error(displayMessage);
             }
-
-        }).catch((err) => {
-            if (err.response) {
-                // The request was made and the server responded with a status code
-                // that falls out of the range of 2xx
-                const msg = err.response.data?.msg || err.response.data || "未知错误";
-                alert(msg);
-            } else if (err.request) {
-                // The request was made but no response was received
-                alert("网络错误，请稍后再试");
-            } else {
-                // Something happened in setting up the request that triggered an Error
-                alert(err.message);
-            }
-    })
+        }
+    } catch (error: any) {
+        if (error.response) {
+            const errorMessage = error.response.data?.msg || error.response.data || "注册失败";
+            message.error(errorMessage);
+        } else if (error.request) {
+            message.error("网络错误，请稍后再试");
+        } else {
+            message.error(error.message || "注册失败");
+        }
+        console.error('Signup error:', error);
+    }
 };
 
-const onFinishFailed = (errorInfo: any) => {
-    alert("输入有误")
+const handleSignupFailed = () => {
+    message.warning('请检查输入信息');
 };
 
 const SignupForm: React.FC = () => (
@@ -58,12 +60,13 @@ const SignupForm: React.FC = () => (
             </div>
 
             <Form
-                name="basic"
-                onFinish={onFinish}
-                onFinishFailed={onFinishFailed}
+                name="signupForm"
+                onFinish={handleSignup}
+                onFinishFailed={handleSignupFailed}
                 autoComplete="off"
                 layout="vertical"
                 size="large"
+                className="space-y-1"
             >
                 <Form.Item
                     label="邮箱"
@@ -76,7 +79,7 @@ const SignupForm: React.FC = () => (
                     <Input 
                         prefix={<MailOutlined className="text-gray-400" />}
                         placeholder="请输入您的邮箱"
-                        className="rounded-lg"
+                        className="rounded-lg h-12"
                     />
                 </Form.Item>
 
@@ -91,7 +94,7 @@ const SignupForm: React.FC = () => (
                     <Input.Password 
                         prefix={<LockOutlined className="text-gray-400" />}
                         placeholder="请输入密码（至少6位）"
-                        className="rounded-lg"
+                        className="rounded-lg h-12"
                     />
                 </Form.Item>
 
@@ -114,7 +117,7 @@ const SignupForm: React.FC = () => (
                     <Input.Password 
                         prefix={<SafetyOutlined className="text-gray-400" />}
                         placeholder="请再次输入密码"
-                        className="rounded-lg"
+                        className="rounded-lg h-12"
                     />
                 </Form.Item>
 
@@ -122,7 +125,7 @@ const SignupForm: React.FC = () => (
                     <Button 
                         type="primary" 
                         htmlType="submit" 
-                        className="w-full h-12 rounded-lg bg-gradient-to-r from-green-500 to-emerald-600 border-0 hover:from-green-600 hover:to-emerald-700 shadow-lg"
+                        className="w-full h-12 sm:h-14 rounded-lg bg-gradient-to-r from-green-500 to-emerald-600 border-0 hover:from-green-600 hover:to-emerald-700 shadow-lg text-base sm:text-lg font-medium"
                     >
                         注册
                     </Button>

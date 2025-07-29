@@ -1,9 +1,11 @@
 package web
 
 import (
+	"fmt"
 	"net/http"
 
 	regexp "github.com/dlclark/regexp2"
+	"github.com/gin-contrib/sessions"
 	"github.com/yifaaan/webook/internal/domain"
 	"github.com/yifaaan/webook/internal/service"
 
@@ -95,7 +97,7 @@ func (u *UserHandler) Login(ctx *gin.Context) {
 	if err := ctx.Bind(&req); err != nil {
 		return
 	}
-	err := u.svc.Login(ctx, domain.User{Email: req.Email, Password: req.Password})
+	user, err := u.svc.Login(ctx, domain.User{Email: req.Email, Password: req.Password})
 	if err == service.ErrInvalidUserOrPassword {
 		ctx.String(http.StatusOK, "用户名或密码错误")
 		return
@@ -103,7 +105,25 @@ func (u *UserHandler) Login(ctx *gin.Context) {
 	if err != nil {
 		ctx.String(http.StatusOK, "系统错误")
 	}
+	// 登录成功
+	// 设置session的内容
+	sess := sessions.Default(ctx)
+	sess.Options(sessions.Options{
+		Path:   "/",
+		MaxAge: 60,
+	})
+	sess.Set("userId", user.Id)
+	sess.Save()
 	ctx.String(http.StatusOK, "登录成功")
+}
+
+func (u *UserHandler) Logout(ctx *gin.Context) {
+	sess := sessions.Default(ctx)
+	sess.Options(sessions.Options{
+		MaxAge: -1,
+	})
+	sess.Save()
+	ctx.String(http.StatusOK, "退出登录成功")
 }
 
 func (u *UserHandler) Edit(ctx *gin.Context) {
@@ -111,5 +131,16 @@ func (u *UserHandler) Edit(ctx *gin.Context) {
 }
 
 func (u *UserHandler) Profile(ctx *gin.Context) {
-
+	sess := sessions.Default(ctx)
+	userId := sess.Get("userId")
+	if userId == nil {
+		ctx.AbortWithStatus(http.StatusUnauthorized)
+		return
+	}
+	userIdInt, ok := userId.(int64)
+	if !ok {
+		ctx.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+	ctx.String(http.StatusOK, fmt.Sprintf("userId: %d", userIdInt))
 }

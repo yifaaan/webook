@@ -31,18 +31,18 @@ func (us *UserService) SignUp(ctx context.Context, user domain.User) error {
 	return us.repo.Create(ctx, user)
 }
 
-func (us *UserService) Login(ctx context.Context, user domain.User) error {
+func (us *UserService) Login(ctx context.Context, user domain.User) (domain.User, error) {
 	u, err := us.repo.FindByEmail(ctx, user.Email)
 	if err == repository.ErrUserNotFound {
-		return ErrInvalidUserOrPassword
+		return domain.User{}, ErrInvalidUserOrPassword
 	}
 	if err != nil {
-		return err
+		return domain.User{}, err
 	}
 	// 比较密码
 	err = bcrypt.CompareHashAndPassword([]byte(u.Password), []byte(user.Password))
 	if err != nil {
-		return ErrInvalidUserOrPassword
+		return domain.User{}, ErrInvalidUserOrPassword
 	}
-	return nil
+	return u, nil
 }

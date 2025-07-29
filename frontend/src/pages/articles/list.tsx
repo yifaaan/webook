@@ -1,18 +1,17 @@
-'use client';
-import {EditOutlined, BookOutlined, PlusOutlined} from '@ant-design/icons';
-import {ProLayout, ProList} from '@ant-design/pro-components';
-import {Button, Tag, Card, Typography, Space} from 'antd';
-import React, {useEffect, useState} from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
+import { EditOutlined, BookOutlined, PlusOutlined } from '@ant-design/icons';
+import { ProLayout, ProList } from '@ant-design/pro-components';
+import { Button, Tag, Card, Typography, Space, message } from 'antd';
 import axios from "@/axios/axios";
 import router from "next/router";
 
 const { Title, Text } = Typography;
 
-const IconText = ({ icon, text, onClick }: { icon: any; text: string, onClick: any}) => (
+const IconText = ({ icon, text, onClick }: { icon: React.ComponentType; text: string; onClick: () => void }) => (
     <Button 
         onClick={onClick} 
         type="default"
-        className="hover:bg-blue-50 hover:border-blue-300 hover:text-blue-600 rounded-lg"
+        className="hover:bg-blue-50 hover:border-blue-300 hover:text-blue-600 rounded-lg interactive-element"
     >
         {React.createElement(icon, { style: { marginInlineEnd: 8 } })}
         {text}
@@ -20,26 +19,44 @@ const IconText = ({ icon, text, onClick }: { icon: any; text: string, onClick: a
 );
 
 interface ArticleItem {
-    id: bigint
-    title: string
-    status: number
-    abstract: string
+    id: bigint;
+    title: string;
+    status: number;
+    abstract: string;
 }
 
-const ArticleList = () => {
-    const [data, setData] = useState<Array<ArticleItem>>([])
-    const [loading, setLoading] = useState<boolean>()
+const ArticleList: React.FC = () => {
+    const [data, setData] = useState<ArticleItem[]>([]);
+    const [loading, setLoading] = useState<boolean>(false);
+
+    const fetchArticles = useCallback(async () => {
+        try {
+            setLoading(true);
+            const response = await axios.post('/articles/list', {
+                offset: 0,
+                limit: 100,
+            });
+            
+            if (response.data?.data) {
+                setData(response.data.data);
+            } else {
+                message.error('获取文章列表失败');
+            }
+        } catch (error) {
+            message.error('网络错误，请稍后重试');
+            console.error('Fetch articles error:', error);
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+
+    const handleEditArticle = useCallback((articleId: bigint) => {
+        router.push(`/articles/edit?id=${articleId.toString()}`);
+    }, []);
+
     useEffect(() => {
-        setLoading(true)
-        axios.post('/articles/list', {
-            "offset": 0,
-            "limit": 100,
-        }).then((res) => res.data)
-            .then((data) => {
-                setData(data.data)
-                setLoading(false)
-            })
-    }, [])
+        fetchArticles();
+    }, [fetchArticles]);
     return (
         <div className="min-h-screen bg-gradient-to-br from-blue-50 to-cyan-100">
             <ProLayout 
@@ -70,7 +87,7 @@ const ArticleList = () => {
                             icon={<PlusOutlined />}
                             href="/articles/edit"
                             size="large"
-                            className="bg-gradient-to-r from-blue-500 to-cyan-600 border-0 rounded-lg hover:from-blue-600 hover:to-cyan-700 shadow-lg h-12 px-8"
+                            className="bg-gradient-to-r from-blue-500 to-cyan-600 border-0 rounded-lg hover:from-blue-600 hover:to-cyan-700 shadow-lg h-12 px-8 interactive-element"
                         >
                             开始创作
                         </Button>
@@ -84,7 +101,7 @@ const ArticleList = () => {
                         grid={{ gutter: 16, column: 1 }}
                         renderItem={(item) => (
                             <Card
-                                className="mb-4 hover:shadow-lg transition-all duration-300 rounded-xl border-0"
+                                className="mb-4 hover:shadow-lg transition-all duration-300 rounded-xl border-0 interactive-element"
                                 style={{ background: 'linear-gradient(135deg, #f8fafc 0%, #ffffff 100%)' }}
                             >
                                 <div className="flex justify-between items-start">
@@ -120,9 +137,7 @@ const ArticleList = () => {
                                             <IconText
                                                 icon={EditOutlined}
                                                 text="编辑"
-                                                onClick={() => {
-                                                    router.push("/articles/edit?id=" + item.id.toString())
-                                                }}
+                                                onClick={() => handleEditArticle(item.id)}
                                             />
                                         </Space>
                                     </div>

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Button, Form, Input, Card, Typography, Space, Divider } from 'antd';
+import { Button, Form, Input, Card, Typography, Space, Divider, message } from 'antd';
 import { UserOutlined, LockOutlined, MailOutlined, MobileOutlined, WechatOutlined } from '@ant-design/icons';
 import axios from "@/axios/axios";
 import Link from "next/link";
@@ -7,29 +7,36 @@ import router from "next/router";
 
 const { Title, Text } = Typography;
 
-const onFinish = (values: any) => {
-    axios.post("/users/login", values)
-        .then((res) => {
-            if(res.status != 200) {
-                alert(res.statusText);
-                return
-            }
-            if(typeof res.data == 'string') {
-                alert(res.data);
+const handleLogin = async (values: any) => {
+    try {
+        const response = await axios.post("/users/login", values);
+        
+        if (response.status !== 200) {
+            message.error(response.statusText);
+            return;
+        }
+        
+        if (typeof response.data === 'string') {
+            message.error(response.data);
+        } else {
+            const { code, msg } = response.data;
+            const displayMessage = msg || JSON.stringify(response.data);
+            
+            if (code === 0) {
+                message.success('登录成功！');
+                router.push('/articles/list');
             } else {
-                const msg = res.data?.msg || JSON.stringify(res.data)
-                alert(msg);
-                if(res.data.code == 0) {
-                    router.push('/articles/list')
-                }
+                message.error(displayMessage);
             }
-        }).catch((err) => {
-            alert(err);
-    })
+        }
+    } catch (error) {
+        message.error('登录失败，请稍后重试');
+        console.error('Login error:', error);
+    }
 };
 
-const onFinishFailed = (errorInfo: any) => {
-    alert("输入有误")
+const handleLoginFailed = () => {
+    message.warning('请检查输入信息');
 };
 
 const LoginForm: React.FC = () => {
@@ -47,12 +54,13 @@ const LoginForm: React.FC = () => {
                 </div>
 
                 <Form
-                    name="basic"
-                    onFinish={onFinish}
-                    onFinishFailed={onFinishFailed}
+                    name="loginForm"
+                    onFinish={handleLogin}
+                    onFinishFailed={handleLoginFailed}
                     autoComplete="off"
                     layout="vertical"
                     size="large"
+                    className="space-y-1"
                 >
                     <Form.Item
                         label="邮箱"
@@ -97,7 +105,7 @@ const LoginForm: React.FC = () => {
                         <Link href="/users/login_sms" className="block">
                             <Button 
                                 icon={<MobileOutlined />} 
-                                className="w-full h-10 sm:h-12 rounded-lg border-2 hover:border-blue-400 hover:text-blue-500 text-sm sm:text-base"
+                                className="w-full h-10 sm:h-12 rounded-lg border-2 hover:border-blue-400 hover:text-blue-500 text-sm sm:text-base interactive-element"
                             >
                                 手机号登录
                             </Button>
@@ -106,7 +114,7 @@ const LoginForm: React.FC = () => {
                         <Link href="/users/login_wechat" className="block">
                             <Button 
                                 icon={<WechatOutlined />} 
-                                className="w-full h-10 sm:h-12 rounded-lg border-2 hover:border-green-400 hover:text-green-500 text-sm sm:text-base"
+                                className="w-full h-10 sm:h-12 rounded-lg border-2 hover:border-green-400 hover:text-green-500 text-sm sm:text-base interactive-element"
                             >
                                 微信扫码登录
                             </Button>
