@@ -134,7 +134,7 @@ function Page() {
                                     <span>生日</span>
                                 </Space>
                             } 
-                            valueType="date"
+                            valueType="text"
                         >
                             <Text strong className="text-lg">
                                 {data.Birthday || <Text type="secondary">未设置</Text>}

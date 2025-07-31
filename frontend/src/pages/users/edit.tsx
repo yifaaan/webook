@@ -4,11 +4,31 @@ import axios from "@/axios/axios";
 import moment from 'moment';
 import router from "next/router";
 
+// 导入Profile类型
+type Profile = {
+    Email: string
+    Phone: string
+    Nickname: string
+    Birthday: string
+    AboutMe: string
+}
+
 const { TextArea } = Input;
+
+// 辅助函数：安全地转换生日字符串为moment对象
+const getBirthdayMoment = (birthday: string) => {
+    if (!birthday || birthday === "") {
+        return null;
+    }
+    const momentObj = moment(birthday, 'YYYY-MM-DD');
+    return momentObj.isValid() ? momentObj : null;
+};
 
 const onFinish = (values: any) => {
     if (values.birthday) {
         values.birthday = moment(values.birthday).format("YYYY-MM-DD")
+    } else {
+        values.birthday = ""
     }
     axios.post("/users/edit", values)
         .then((res) => {
@@ -31,6 +51,7 @@ const onFinishFailed = (errorInfo: any) => {
 };
 
 function EditForm() {
+    const [form] = Form.useForm(); // 使用Form实例
     const p: Profile = {} as Profile
     const [data, setData] = useState<Profile>(p)
     const [isLoading, setLoading] = useState(false)
@@ -38,25 +59,34 @@ function EditForm() {
     useEffect(() => {
         setLoading(true)
         axios.get('/users/profile')
-            .then((res) => res.data)
+            .then((res) => {
+                return res.data;
+            })
             .then((data) => {
                 setData(data)
+                // 当数据加载完成后，设置表单字段值
+                form.setFieldsValue({
+                    nickname: data.Nickname,
+                    aboutMe: data.AboutMe,
+                    birthday: getBirthdayMoment(data.Birthday)
+                });
                 setLoading(false)
             })
-    }, [])
+            .catch((error) => {
+                console.error('Error fetching profile:', error);
+                setLoading(false)
+            })
+    }, [form])
 
-    if (isLoading) return <p>Loading...</p>
-    if (!data) return <p>No profile data</p>
+    if (isLoading) return <div>Loading...</div>
+    if (!data) return <div>No profile data</div>
+    
     return <Form
+        form={form}
         name="basic"
         labelCol={{ span: 8 }}
         wrapperCol={{ span: 16 }}
         style={{ maxWidth: 600 }}
-        initialValues={{
-            birthday: moment(data.Birthday, 'YYYY-MM-DD'),
-            nickname: data.Nickname,
-            aboutMe: data.AboutMe
-        }}
         onFinish={onFinish}
         onFinishFailed={onFinishFailed}
         autoComplete="off"

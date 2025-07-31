@@ -23,8 +23,11 @@ const handleLogin = async (values: any) => {
             const displayMessage = msg || JSON.stringify(response.data);
             
             if (code === 0) {
-                message.success('登录成功！');
-                router.push('/articles/list');
+                message.success('登录成功！即将跳转...');
+                
+                // token已经通过axios interceptor自动存储到localStorage
+                // 跳转到目标页面
+                router.push('/users/profile');
             } else {
                 message.error(displayMessage);
             }

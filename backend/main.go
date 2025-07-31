@@ -56,7 +56,8 @@ func initWebServer() *gin.Engine {
 		AllowOriginFunc: func(origin string) bool {
 			return strings.Contains(origin, "localhost") || strings.Contains(origin, "127.0.0.1")
 		},
-		MaxAge: 12 * time.Hour,
+		ExposeHeaders: []string{"x-jwt-token"},
+		MaxAge:        12 * time.Hour,
 	}))
 
 	// store := cookie.NewStore([]byte("secret"))
@@ -67,6 +68,7 @@ func initWebServer() *gin.Engine {
 	server.Use(sessions.Sessions("ssid", store))
 
 	// 登录校验middleware
-	server.Use(middleware.NewLoginMiddlewareBuilder().IgnorePaths("/users/login", "/users/signup").Build())
+	// server.Use(middleware.NewLoginMiddlewareBuilder().IgnorePaths("/users/login", "/users/signup").Build())
+	server.Use(middleware.NewLoginJWTMiddlewareBuilder().IgnorePaths("/users/login", "/users/signup").Build())
 	return server
 }
