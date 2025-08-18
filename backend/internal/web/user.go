@@ -2,6 +2,7 @@ package web
 
 import (
 	"net/http"
+	"time"
 
 	regexp "github.com/dlclark/regexp2"
 	"github.com/gin-contrib/sessions"
@@ -128,6 +129,11 @@ func (u *UserHandler) Logout(ctx *gin.Context) {
 	ctx.String(http.StatusOK, "退出登录成功")
 }
 
+type UserClaims struct {
+	jwt.RegisteredClaims
+	UserId int64
+}
+
 func (u *UserHandler) LoginJWT(ctx *gin.Context) {
 	type LoginReq struct {
 		Email    string `json:"email"`
@@ -148,6 +154,10 @@ func (u *UserHandler) LoginJWT(ctx *gin.Context) {
 	}
 
 	claims := UserClaims{
+		RegisteredClaims: jwt.RegisteredClaims{
+			// 过期时间
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Minute)),
+		},
 		UserId: user.Id,
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
@@ -244,9 +254,4 @@ func (u *UserHandler) ProfileJWT(ctx *gin.Context) {
 		"Birthday": user.Birthday,
 		"AboutMe":  user.AboutMe,
 	})
-}
-
-type UserClaims struct {
-	jwt.RegisteredClaims
-	UserId int64
 }

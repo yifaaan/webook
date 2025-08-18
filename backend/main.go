@@ -26,7 +26,9 @@ func main() {
 }
 
 func initDB() *gorm.DB {
-	db, err := gorm.Open(mysql.Open("root:123456@tcp(localhost:3306)/webook"))
+	// docker
+	// db, err := gorm.Open(mysql.Open("root:123456@tcp(localhost:3306)/webook"))
+	db, err := gorm.Open(mysql.Open("webook:1119@tcp(47.120.52.37:3306)/webook?charset=utf8mb4&parseTime=True&loc=Local"))
 	if err != nil {
 		panic(err)
 	}
@@ -61,7 +63,7 @@ func initWebServer() *gin.Engine {
 	}))
 
 	// store := cookie.NewStore([]byte("secret"))
-	store, err := redis.NewStore(16, "tcp", "localhost:6379", "", "", []byte("adf"))
+	store, err := redis.NewStore(16, "tcp", "47.120.52.37:6379", "", "1119", []byte("adf"))
 	if err != nil {
 		panic(err)
 	}
