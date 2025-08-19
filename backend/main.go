@@ -10,6 +10,7 @@ import (
 	"github.com/gin-gonic/gin"
 	redisv9 "github.com/redis/go-redis/v9"
 	"github.com/yifaaan/webook/internal/repository"
+	"github.com/yifaaan/webook/internal/repository/cache"
 	"github.com/yifaaan/webook/internal/repository/dao"
 	"github.com/yifaaan/webook/internal/service"
 	"github.com/yifaaan/webook/internal/web"
@@ -20,9 +21,13 @@ import (
 )
 
 func main() {
+	redisClient := redisv9.NewClient(&redisv9.Options{
+		Addr:     "47.120.52.37:6379",
+		Password: "1119",
+	})
 	db := initDB()
-	server := initWebServer()
-	u := initUser(db)
+	server := initWebServer(redisClient)
+	u := initUser(db, redisClient)
 	u.RegisterRoutes(server)
 	server.Run(":8080")
 }
@@ -41,15 +46,15 @@ func initDB() *gorm.DB {
 	return db
 }
 
-func initUser(db *gorm.DB) *web.UserHandler {
+func initUser(db *gorm.DB, redisClient *redisv9.Client) *web.UserHandler {
 	d := dao.NewUserDAO(db)
-	repo := repository.NewUserRepository(d)
+	repo := repository.NewUserRepository(d, cache.NewUserCache(redisClient))
 	svc := service.NewUserService(repo)
 	u := web.NewUserHandler(svc)
 	return u
 }
 
-func initWebServer() *gin.Engine {
+func initWebServer(redisClient *redisv9.Client) *gin.Engine {
 	server := gin.Default()
 	// 跨域middleware
 	server.Use(cors.New(cors.Config{
@@ -64,10 +69,7 @@ func initWebServer() *gin.Engine {
 		MaxAge:        12 * time.Hour,
 	}))
 	// 限流 middleware
-	redisClient := redisv9.NewClient(&redisv9.Options{
-		Addr:     "47.120.52.37:6379",
-		Password: "1119",
-	})
+
 	server.Use(ratelimit.NewBuilder(redisClient, time.Second, 100).Build())
 
 	// store := cookie.NewStore([]byte("secret"))
