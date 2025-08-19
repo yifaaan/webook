@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/yifaaan/webook/internal/domain"
+	"github.com/yifaaan/webook/internal/repository/cache"
 	"github.com/yifaaan/webook/internal/repository/dao"
 )
 
@@ -13,11 +14,12 @@ var (
 )
 
 type UserRepository struct {
-	dao *dao.UserDAO
+	dao   *dao.UserDAO
+	cache *cache.UserCache
 }
 
-func NewUserRepository(dao *dao.UserDAO) *UserRepository {
-	return &UserRepository{dao: dao}
+func NewUserRepository(dao *dao.UserDAO, cache *cache.UserCache) *UserRepository {
+	return &UserRepository{dao: dao, cache: cache}
 }
 
 func (up *UserRepository) Create(ctx context.Context, user domain.User) error {
@@ -38,18 +40,30 @@ func (up *UserRepository) FindByEmail(ctx context.Context, email string) (domain
 
 func (up *UserRepository) FindById(ctx context.Context, id int64) (domain.User, error) {
 	// cache
-	// dao
-	user, err := up.dao.FindByID(ctx, id)
-	if err != nil {
-		return domain.User{}, err
+	u, err := up.cache.Get(ctx, id)
+	if err == nil {
+		return u, nil
 	}
-	return domain.User{
-		Id:       user.Id,
-		Email:    user.Email,
-		Nickname: user.Nickname,
-		Birthday: user.Birthday,
-		AboutMe:  user.AboutMe,
-	}, nil
+	if err == cache.ErrKeyNotFound {
+		// dao
+		user, err := up.dao.FindByID(ctx, id)
+		if err != nil {
+			return domain.User{}, err
+		}
+		val := domain.User{
+			Id:       user.Id,
+			Email:    user.Email,
+			Nickname: user.Nickname,
+			Birthday: user.Birthday,
+			AboutMe:  user.AboutMe,
+		}
+		err = up.cache.Set(ctx, val)
+		if err != nil {
+			return domain.User{}, err
+		}
+		return val, nil
+	}
+	return domain.User{}, err
 }
 
 func (up *UserRepository) Update(ctx context.Context, user domain.User) error {

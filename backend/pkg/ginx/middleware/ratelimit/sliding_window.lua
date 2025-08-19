@@ -15,6 +15,6 @@ else
     -- 添加当前请求
     redis.call('ZADD', key, now, now)
     -- 刷新过期时间
-    redis.call('EXPIRE', key, window)
+    redis.call('PEXPIRE', key, window)
     return 0
 end

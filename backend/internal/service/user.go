@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 
+	"github.com/redis/go-redis/v9"
 	"github.com/yifaaan/webook/internal/domain"
 	"github.com/yifaaan/webook/internal/repository"
 	"golang.org/x/crypto/bcrypt"
@@ -15,7 +16,8 @@ var (
 )
 
 type UserService struct {
-	repo *repository.UserRepository
+	repo  *repository.UserRepository
+	redis *redis.Client
 }
 
 func NewUserService(repo *repository.UserRepository) *UserService {
@@ -28,6 +30,7 @@ func (us *UserService) SignUp(ctx context.Context, user domain.User) error {
 		return err
 	}
 	user.Password = string(hash)
+
 	return us.repo.Create(ctx, user)
 }
 
